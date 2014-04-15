@@ -96,12 +96,16 @@ database_delete() {
 }
 
 drupal_install() {
-  echo -e "\tRunning Drupal installation..."
+  send_message "Installing Drupal"
   cd ${DOCROOT}/sites/default/
-  drush site-install standard install_configure_form.update_status_module='array(FALSE,FALSE)' -qy --db-url=mysql://${CREDS}:${CREDS}@${DB_HOST}:${DB_PORT}/${SITENAME} --site-name=${SITENAME} --site-mail=${CREDS}@${SITENAME}.${SUFFIX} --account-name=${CREDS} --account-pass=${CREDS} --account-mail=${CREDS}@${SITENAME}.${SUFFIX}
+  rm ${DOCROOT}/sites/default/settings.php
+  cp ${DOCROOT}/sites/default/default.settings.php ${DOCROOT}/sites/default/settings.php
+  ${DRUSH} site-install standard install_configure_form.update_status_module='array(FALSE,FALSE)' -qy --db-url=mysql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DATABASE} --site-name=${DRUPAL_SITENAME} --site-mail=${DRUPAL_USER}@${DRUPAL_SITENAME}.${SUFFIX} --account-name=${DRUPAL_USER} --account-pass=${DRUPAL_PASSWORD} --account-mail=${DRUPAL_USER}@${DRUPAL_SITENAME}.${SUFFIX}
+
 }
+
 # Change the permissions back to -w
-drupal_site_perms() {
+files_permissions() {
  echo -e "\tSetting correct permissions..."
   # Drupal
   chmod go-w ${DOCROOT}/${SITENAME}/sites/default
@@ -115,10 +119,10 @@ drupal_site_perms() {
   chmod 600 $HOME/.drush/${SITENAME}.aliases.drushrc.php
 
   # Rebuild drush commandfile cache to load the aliases
-  drush -q cc drush
+  ${DRUSH} -q cc drush
 
   # Rebuilding Drupal caches
-  drush -q @${SITENAME}.${SUFFIX} cache-rebuild
+  ${DRUSH} -q @${SITENAME}.${SUFFIX} cache-rebuild
 
   if [[ $(curl -sL -w "%{http_code} %{url_effective}\\n" "http://${SITENAME}.${SUFFIX}" -o /dev/null) ]]; then
     echo -e "${GREEN}Site is available at http://${SITENAME}.${SUFFIX}${COLOR_ENDING}"
