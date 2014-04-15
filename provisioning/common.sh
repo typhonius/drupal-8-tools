@@ -4,7 +4,7 @@ UNAME=`uname -s`
 
 # Apache variables
 WEBROOT="/var/www/html"
-PERMS=`stat -c %U:%G ${WEBROOT}`
+#PERMS=`stat -c %U:%G ${WEBROOT}`
 SITES_AVAILABLE="/etc/apache2/sites-available"
 SITES_ENABLED="/etc/apache2/sites-enabled"
 APACHE_22_DEFAULT="default"

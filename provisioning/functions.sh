@@ -1,15 +1,68 @@
 #!/usr/bin/env bash
 
-files_create() {
-  #only if not exists
-  mkdir -p ${PUBLIC_FILES}
+send_message() {
+  echo -e "\t$1"
+}
 
-  chmod 777 ${PUBLIC_FILES}
+setup() {
+  # Get the current directory this script is executed from in case we need that.
+  DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+  # Ensure the docroot exists.
+  if [[ ! -d ${DOCROOT} ]]; then
+    send_message "The directory [${DOCROOT}] does not exist."
+    exit 1
+  fi
+
+  # Remove the final slash for consistency.
+  DOCROOT=${DOCROOT%/}
+
+  # Check we have an index.php and core to become more confident
+  # this is a D8 docroot.
+  if [[ ! -f ${DOCROOT}/index.php || ! -d ${DOCROOT}/core ]]; then
+    send_message "This does not appear to be a Drupal 8 installation."
+    exit 1
+  fi
+
+  # Assign our public files directory, creating if necessary.
+  PUBLIC_FILES=${DOCROOT}/sites/default/files
+
+  if [[ ! -d ${PUBLIC_FILES} ]]; then
+    files_create
+  fi
+
+  # Assign the database name if the user has provided it.
+  if [[ -n $2 ]]; then
+    DATABASE=$2
+  else
+    # If this hasn't been provided, let's use the directory name of the docroot (unless it's docroot)
+    if [[ ${DOCROOT##*/} != 'docroot' ]]; then
+      DATABASE=${DOCROOT##*/}
+    else
+      # If the dirname is docroot then cut that off the end and then do the above.
+      DBTEMP=${DOCROOT%/docroot}
+      DATABASE=${DBTEMP##*/}
+    fi
+  fi
+}
+
+files_create() {
+  if [[ ! -d ${PUBLIC_FILES} ]]; then
+    send_message "Creating public files directory at ${PUBLIC_FILES}."
+    mkdir -p ${PUBLIC_FILES}
+    chmod 777 ${PUBLIC_FILES}
+  else
+    send_message "Public files directory already exists at ${PUBLIC_FILES}."
+  fi
 }
 
 files_delete() {
-  # only if exists
-  rm -f -r ${PUBLIC_FILES}
+  if [[ -d ${PUBLIC_FILES} ]]; then
+    echo -e "\tDeleting public files directory at ${PUBLIC_FILES}."
+    rm -f -r ${PUBLIC_FILES}
+  else
+    echo -e "\tPublic files directory not found at ${PUBLIC_FILES}."
+  fi
 }
 
 database_create() {
@@ -19,8 +72,8 @@ database_create() {
   QUERIES[2]="GRANT ALL ON \`${DATABASE}\`.* TO '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}'"
   QUERIES[3]="GRANT ALL ON \`${DATABASE}\`.* TO '${DB_USER}'@'${DB_HOST}' IDENTIFIED BY '${DB_PASS}'"
 
-  echo -e "\tCreating MySQL database ${DATABASE}"
-  echo -e "\tAdding permissions to ${DATABASE}"
+  send_message "Creating MySQL database ${DATABASE}"
+  send_message "Adding permissions to ${DATABASE}"
 
   # Run the queries and assume where user/pass credentials are not entered,
   # the user has a ~/.my.cnf or just an empty password.
@@ -38,13 +91,11 @@ database_create() {
 # Remove the settings.php if it exists
 
 database_delete() {
-  echo -e "\tDeleting database ${DATABASE}"
-  echo ${MYSQL} -u${DB_USER} -p${DB_PASS} -e "DROP DATABASE IF EXISTS ${DATABASE}"
+  send_message "Deleting database ${DATABASE}"
   ${MYSQL} -u${DB_USER} -p${DB_PASS} -e "DROP DATABASE IF EXISTS ${DATABASE}"
 }
 
 drupal_install() {
-
   echo -e "\tRunning Drupal installation..."
   cd ${DOCROOT}/sites/default/
   drush site-install standard install_configure_form.update_status_module='array(FALSE,FALSE)' -qy --db-url=mysql://${CREDS}:${CREDS}@${DB_HOST}:${DB_PORT}/${SITENAME} --site-name=${SITENAME} --site-mail=${CREDS}@${SITENAME}.${SUFFIX} --account-name=${CREDS} --account-pass=${CREDS} --account-mail=${CREDS}@${SITENAME}.${SUFFIX}

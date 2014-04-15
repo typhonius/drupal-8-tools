@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+# This script will reinstall a Drupal installation when given the path to it.
+# Most often the usecase for this will be when HEAD breaks irreparably.
+
+# Include all the platform specific variables
+. common.sh
+
+# Include the helper functions
+. functions.sh
+
+#eventually ./drupal-util reinstall path/to/docroot
+usage() {
+  send_message 'Usage: ./reinstall install|reinstall|delete|help /path/to/docroot [database name]'
+  send_message 'The database used is optional. If one is not used, the directory name of the docroot will be used.'
+  exit 0
+}
+
+DOCROOT=$2
+DATABASE=$3
+
+# See how we were called.
+case "$1" in
+  install)
+        setup
+        files_create
+        database_create
+        ;;
+  reinstall)
+        setup
+        files_delete
+        files_create
+        database_delete
+        database_create
+        ;;
+  delete)
+        setup
+        files_delete
+        database_delete
+        ;;
+  help)
+        usage
+        ;;
+  *)
+        usage
+esac
+
+
