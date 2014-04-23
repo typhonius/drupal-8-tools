@@ -17,9 +17,9 @@ setup() {
   # Remove the final slash for consistency.
   DOCROOT=${DOCROOT%/}
 
-  # Check we have an index.php and core to become more confident
+  # Check we have an composer.json and core to become more confident
   # this is a D8 docroot.
-  if [[ ! -f ${DOCROOT}/index.php || ! -d ${DOCROOT}/core ]]; then
+  if [[ ! -f ${DOCROOT}/composer.json || ! -d ${DOCROOT}/core || ! -f ${DOCROOT}/core/lib/Drupal.php ]]; then
     send_message "This does not appear to be a Drupal 8 installation."
     exit 1
   fi
@@ -59,7 +59,7 @@ files_create() {
 files_delete() {
   if [[ -d ${PUBLIC_FILES} ]]; then
     echo -e "\tDeleting public files directory at ${PUBLIC_FILES}."
-    rm -f -r ${PUBLIC_FILES}
+    rm -Rf ${PUBLIC_FILES}
   else
     echo -e "\tPublic files directory not found at ${PUBLIC_FILES}."
   fi

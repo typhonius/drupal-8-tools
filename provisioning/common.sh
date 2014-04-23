@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-UNAME=`uname -s`
-
 # Apache variables
 WEBROOT="/var/www/html"
 #PERMS=`stat -c %U:%G ${WEBROOT}`
@@ -31,7 +29,7 @@ DB_PASS=""
 
 # Misc variables
 CREDS="root"
-DRUSH='drush'
+DRUSH=`which drush`
 
 # Colors
 GREEN="\033[0;32m"
@@ -40,7 +38,7 @@ BLUE="\033[0;34m"
 COLOR_ENDING="\033[0m"
 
 # Different OSs use different paths and vars.
-if [[ $UNAME == 'Darwin' ]]; then
+if [[ $(uname -s) == 'Darwin' ]]; then
   SUFFIX="local"
   if [[ -d /opt/boxen ]]; then
     DB_PORT="13306"
